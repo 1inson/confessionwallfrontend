@@ -200,12 +200,12 @@ const handleProfileUpdate = async () => {
   align-items: flex-start;
   padding: 50px 15px; 
   min-height: 100vh; 
-  background-color: #1a1a1a;/* 背景颜色 */
+  background-color: var(--primary-color);/* 背景颜色 */
   color: #e0e0e0; 
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 .profile-card {
-  background-color: #000; 
+  background-color: calc(var(--primary-lightness) - 10%); 
   border: 1px solid #2f3336; 
   border-radius: 16px;
   padding: 20px; 

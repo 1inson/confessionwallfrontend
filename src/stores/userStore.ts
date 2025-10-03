@@ -16,7 +16,7 @@ export const useUserStore = defineStore('user', {
   }),
   getters: {
     // 用于路由守卫判断登录状态
-    isLoggedIn: (state) => !!state.accessToken,
+    isLoggedIn: (state) => !!state.accessToken&&!!state.profile,
   },
   actions: {
 
