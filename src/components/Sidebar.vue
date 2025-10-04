@@ -68,7 +68,7 @@ const fontSizes = [
 <style scoped>
 .sidebar {
   width: 200px;
-  background-color: #71869c;
+  background-color: var(--primary-color);
   display: flex;
   flex-direction: column;
   position: fixed;

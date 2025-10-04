@@ -1,12 +1,23 @@
 import service from './request'
 
+//token 刷新接口
+export interface RefreshAuthTokens {
+  'access-token': string;
+  'refresh-token': string;
+}
+export function refreshTokenApi(refreshToken: string): Promise<RefreshAuthTokens> {
+  return service.post('/users/refresh-token', {
+    'refresh-token': refreshToken,
+  });
+}
+
 // 注册接口
 export interface RegisterData {
   username: string;
   password: string;
   name: string;
   usertype: number;
-  avatar?: string; // avatar 是可选的
+  avatar: string; // avatar 是必须的
 }
 
 export interface AuthTokens {

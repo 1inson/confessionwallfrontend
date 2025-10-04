@@ -66,6 +66,7 @@ const registerForm = ref({
   password: '',
   name: '',
   usertype: 1, 
+  avatar: 'http://120.26.133.208:8080/resources/default.png',
 });
 
 const errorMessage = ref('');

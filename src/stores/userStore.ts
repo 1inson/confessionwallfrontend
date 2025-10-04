@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import axios from 'axios';
 
-import { registerApi, type RegisterData,
+import { refreshTokenApi,
+  registerApi, type RegisterData,
    loginApi, type LoginData,
    type AuthTokens, getProfileApi, type UserProfile,
     updateProfileApi,  type UpdateProfileData, uploadImageApi, type ImageUploadResponse} from '@/api/user' 
@@ -16,9 +17,31 @@ export const useUserStore = defineStore('user', {
   }),
   getters: {
     // 用于路由守卫判断登录状态
-    isLoggedIn: (state) => !!state.accessToken&&!!state.profile,
+    isLoggedIn: (state) => !!state.accessToken,
   },
   actions: {
+
+    // 刷新 token
+    async refreshTokenAction() {
+      try {
+        const responseData = await refreshTokenApi(this.refreshToken);
+
+        this.accessToken = responseData['access-token'];
+        this.refreshToken = responseData['refresh-token'];
+
+        localStorage.setItem('accessToken', this.accessToken);
+        localStorage.setItem('refreshToken', this.refreshToken);
+        
+        console.log('Token refreshed successfully!');
+        return this.accessToken;
+
+      } catch (error) {
+        console.error('Failed to refresh token, logging out.');
+        this.logout(); 
+        throw error;
+      }
+    },
+
 
     // 注册
      async register(registerData: RegisterData) {
