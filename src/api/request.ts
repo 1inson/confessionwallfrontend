@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { useUserStore } from '@/stores/userStore'
+import { ElMessage } from 'element-plus';
 
 const service = axios.create({
   baseURL: '/api',
@@ -24,27 +25,55 @@ service.interceptors.request.use(
   
 );
 
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (value: any) => void, reject: (reason?: any) => void }> = [];
+
 service.interceptors.response.use(
   (response) => {
-    const res = response.data;
+    const { code, msg, data } = response.data;
 
-    if (res.code == 200) {
-      return res.data;
+    if (code == 200) {
+      return data;
     }
 
+    ElMessage.error(msg || '业务错误');
+    return Promise.reject(new Error(msg || 'Error'));
 
-    console.error('业务错误:', res.msg || '未知错误');
- 
-    return Promise.reject(new Error(res.msg || 'Error'));
   },
-  (error) => {
-    // 处理 HTTP 网络错误 (例如 404, 500, 401)
-    console.error('网络错误:', error.message);
+  async(error) => {
+   const originalRequest = error.config;
+    if (error.response.status === 401 && !originalRequest._retry) {
+      
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        });
+      }
 
-    if (error.response && error.response.status == 401) {
-      alert('登录状态已过期，请重新登录！');
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const userStore = useUserStore();
+        const newAccessToken = await userStore.refreshTokenAction();
+        
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+
+        failedQueue.forEach(promise => promise.resolve(service(originalRequest)));
+        failedQueue = []; // 清空队列
+
+        return service(originalRequest);
+
+      } catch (refreshError) {
+        failedQueue.forEach(promise => promise.reject(refreshError));
+        failedQueue = [];
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
     }
 
+    ElMessage.error(error.response?.data?.msg || error.message || '请求失败');
     return Promise.reject(error);
   }
 );
