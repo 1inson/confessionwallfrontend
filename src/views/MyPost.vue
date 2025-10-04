@@ -31,7 +31,8 @@ const form = reactive<ConfessionCreationData>({
   photos: [],
   open: true,
   anonymous: false,
-  send_time: '', 
+  send_time: ' ',
+
 });
 
 //检验
@@ -51,6 +52,9 @@ const rules = reactive<FormRules>({
   content: [
     { required: true, message: '请输入表白内容', trigger: 'blur' },
     { min: 1, max: 200, message: '内容长度应在 1 到 200 个字符之间', trigger: 'blur' },
+  ],
+  send_time: [
+    { required: true, message: '请选择发布时间', trigger: 'change' },
   ],
   photos: [
     { validator: validatePhotos, trigger: 'change' },
@@ -87,38 +91,24 @@ const handleRemove: UploadProps['onRemove'] = (removedFile, currentFileList) => 
 
 
 const handleSubmit = async () => {
+  if (!formRef.value) return;
 
-  // 在提交前，设置当前的发送时间
-  form.send_time = new Date().toISOString();
-
-    if (!formRef.value) {
-      console.error('Debug: formRef is not ready!');
-    return;
-  }
-
-  console.log('Debug: handleSubmit initiated. Current form data:', form);
-
-   await formRef.value.validate((valid) => {
-     console.log('Validation result:', valid);
+  await formRef.value.validate((valid) => {
     if (valid) {
-      form.send_time = new Date().toISOString();
-      confessionStore.createConfession(form).then(success => {
-     if (success) {
-    // 发布成功后，清空表单
-    form.title = '';
-    form.content = '';
-    form.photos = [];
-    form.open = true;
-    form.anonymous = false;
-  }
+
+      confessionStore.createConfession(form as ConfessionCreationData).then(success => {
+        if (success) {
+          formRef.value?.resetFields();
+          form.photos = [];
+          form.send_time = ' ';
+        }
       });
-    }else{
-      console.log('Validation failed.');
-      ElMessage.error('表单内容不符合要求');
+    } else {
+      ElMessage.error('表单校验失败，请检查你的输入。');
     }
   });
-
 };
+
 
 //页数变化
 const handlePageChange = (newPage: number) => {
@@ -179,7 +169,7 @@ const handleEdit = (post: Confession) => {
 
 
 
-
+//修改更新提交
 const handleUpdateSubmit = async () => {
   if (!editingPost.value || !editingPostId.value) return;
 
@@ -216,6 +206,16 @@ const handleUpdateSubmit = async () => {
             placeholder="在这里写下你的心里话..."
             />
         </el-form-item>
+          <!--发布时间选择器 -->
+        <el-form-item label="发布时间" prop="send_time">
+            <el-date-picker
+              v-model="form.send_time"
+              type="datetime"
+              placeholder="选择一个时间发布"
+              format="YYYY-MM-DD HH:mm:ss"
+              style="width: 100%;"
+        />
+  </el-form-item>
 
 
         <!-- 图片上传 -->

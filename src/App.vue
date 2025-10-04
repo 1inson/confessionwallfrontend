@@ -24,7 +24,7 @@ watchEffect(() => {
       <RouterView />
     </main>
 
-    <template v-if="userStore.isLoggedIn">
+    <template v-if="userStore.isLoggedIn"> <!--待修改-->
       <Sidebar />
     </template>
   </div>

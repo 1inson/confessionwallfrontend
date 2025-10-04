@@ -9,13 +9,15 @@ const router = createRouter({
      {
       path: '/',          // 当访问根路径时
       name: 'home', 
-      component: AuthView 
+      component: AuthView ,
+      meta: { hideNavbar: true } 
     },
     {
       // 登录注册页
       path: '/auth',
       name: 'auth',
-      component: AuthView
+      component: AuthView,
+      meta: { hideNavbar: true } 
     },
 
     {

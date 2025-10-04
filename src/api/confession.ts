@@ -2,7 +2,7 @@ import service from './request';
 
 //创建帖子
 export interface ConfessionCreationData {
-  send_time: string;
+  send_time: string; //预定时间
   title: string;
   content: string;
   photos: string[]; // 图片 URL 数组

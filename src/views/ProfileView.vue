@@ -14,7 +14,6 @@
         </div>
       </div>
 
-      <!-- 用户详细信息，位于头像下方 -->
       <div class="user-details">
         <h1 class="name">{{ userStore.profile.name }}</h1>
         <p class="username">@{{ userStore.profile.username }}</p>
@@ -70,6 +69,7 @@ import { ref, watch, onMounted } from 'vue';
 import { useUserStore } from '@/stores/userStore';
 import axios from 'axios';
 import { UserFilled } from '@element-plus/icons-vue';
+import { ElMessage, ElMessageBox } from 'element-plus';
 
 const userStore = useUserStore();
 
@@ -174,22 +174,36 @@ const handleProfileUpdate = async () => {
       avatar: finalAvatarUrl 
     };
     
-    const result = await userStore.updateProfile(updateData);
+  if (updateData.username === userStore.profile.username) {
 
-    if (result === true) {
-      alert('用户信息更新成功！');
-      isModalOpen.value = false; 
-    } else {
-  
-      if (axios.isAxiosError(result) && result.response) {
-        alert(`更新失败: ${result.response.data.msg || '未知错误'}`);
-      } else {
-        alert(`更新失败|| '未知错误'}`);
-      }
-    }
-  } catch (error) {
-    alert('发生意外错误，请稍后重试。');
+    delete updateData.username;
   }
+  
+  // 你也可以为其他字段做同样的处理，以实现完全的差异化提交
+  if (updateData.name === userStore.profile.name) {
+    delete updateData.name;
+  }
+  if (updateData.avatar === userStore.profile.avatar) {
+    delete updateData.avatar;
+  }
+
+  // 3. 检查处理后，是否还有需要更新的内容
+  if (Object.keys(updateData).length === 0) {
+    ElMessage.info('你没有做出任何修改。');
+    isModalOpen.value = false;
+    return;
+  }
+
+  console.log('Submitting cleaned update data:', updateData);
+  await userStore.updateProfile(updateData);
+
+  ElMessage.success('用户信息更新成功！');
+  isModalOpen.value = false; 
+
+} catch (error) {
+  // 正确的错误处理...
+  console.error('Update profile failed:', error);
+}
 };
 </script>
 
