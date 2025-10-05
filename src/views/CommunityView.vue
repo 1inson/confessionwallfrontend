@@ -12,7 +12,7 @@ const handlePageChange = (newPage: number) => {
   confessionStore.fetchAllConfessions({ page: newPage, size: 10 });
 };
 const handleLike = (post: Confession) => {
-  confessionStore.toggleLike(post.id);
+  confessionStore.toggleLike(post);
 };
 
 onMounted(() => {
@@ -67,7 +67,7 @@ onMounted(() => {
             <span>{{ post.views }} 次浏览</span>
           </div>
           <div class="meta-item interactive" @click="handleLike(post)">
-            <el-icon :color="post.liked ? '#F56C6C' : ''"><Star /></el-icon>
+            <el-icon :color="!post.liked ? '#F56C6C' : ''"><Star /></el-icon>
             <span>{{ post.likes }} 次点赞</span>
           </div>
         </div>

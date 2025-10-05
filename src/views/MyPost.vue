@@ -191,7 +191,7 @@ const handleUpdateSubmit = async () => {
 
 //点赞
 const handleLike = (post: Confession) => {
-  confessionStore.toggleLike(post.id);
+  confessionStore.toggleLike(post);
 };
 </script>
 

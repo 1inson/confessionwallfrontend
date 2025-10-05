@@ -134,24 +134,18 @@ export const useConfessionStore = defineStore('confession', {
     },
 
     // 点赞
-    async toggleLike(id: number) {
-      const post = this.myConfessions.find(p => p.id === id);
+    async toggleLike(post: Confession) {
       if (!post) return; 
 
       const oldLiked = post.liked;
       const oldLikes = post.likes;
 
-      post.liked = !post.liked;
       post.likes += post.liked ? 1 : -1;
+      post.liked = !post.liked;
 
       try {
-        const updatedPost = await toggleLikeApi(id);
+        await toggleLikeApi(post.id);
 
-        const index = this.myConfessions.findIndex(p => p.id === id);
-        if (index !== -1) {
-          this.myConfessions[index] = updatedPost;
-        }
-        console.log('Like status synced with server.');
 
       } catch (error) {
         
