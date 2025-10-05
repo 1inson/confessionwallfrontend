@@ -213,6 +213,7 @@ const handleUpdateSubmit = async () => {
               type="datetime"
               placeholder="选择一个时间发布"
               format="YYYY-MM-DD HH:mm:ss"
+              value-format="YYYY-MM-DD HH:mm:ss"
               style="width: 100%;"
         />
   </el-form-item>
