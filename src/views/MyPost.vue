@@ -19,12 +19,7 @@ const loadPosts = () => {
 };
 watch(() => userStore.isLoggedIn, (isLoggedIn) => {
   if (isLoggedIn) {
-
-    if (confessionStore.myConfessions.length === 0) {
-
-      console.log('User is logged in, fetching initial posts...');
-      confessionStore.fetchMyConfessions({ page: 0, size: 10 });
-    }
+    loadPosts();
   }
 }, { immediate: true });
 
