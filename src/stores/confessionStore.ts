@@ -3,6 +3,7 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { createConfessionApi, type Confession, type ConfessionCreationData,
   getMyConfessionsApi, type PaginationParams,
   deleteConfessionApi, updateConfessionApi, type ConfessionUpdateData,
+  toggleLikeApi, 
  } from '@/api/confession';
 
 export const useConfessionStore = defineStore('confession', {
@@ -12,7 +13,7 @@ export const useConfessionStore = defineStore('confession', {
     MAX_PHOTOS: 9 as const,
     totalItems: 0,
     totalPages: 0,
-    currentPage: 1, //api上为0(??)
+    currentPage: 0, //api上为0(??)
     isUpdating: false,
   }),
   actions: {
@@ -27,6 +28,7 @@ export const useConfessionStore = defineStore('confession', {
         this.myConfessions.unshift(newConfession);// 新创建的帖子插入到头部
 
         ElMessage.success('发布成功！');
+
         return true; 
 
       } catch (error) {
@@ -103,5 +105,36 @@ export const useConfessionStore = defineStore('confession', {
         this.isUpdating = false;
       }
     },
+
+    // 点赞
+    async toggleLike(id: number) {
+      const post = this.myConfessions.find(p => p.id === id);
+      if (!post) return; 
+
+      const oldLiked = post.liked;
+      const oldLikes = post.likes;
+
+      post.liked = !post.liked;
+      post.likes += post.liked ? 1 : -1;
+
+      try {
+        const updatedPost = await toggleLikeApi(id);
+
+        const index = this.myConfessions.findIndex(p => p.id === id);
+        if (index !== -1) {
+          this.myConfessions[index] = updatedPost;
+        }
+        console.log('Like status synced with server.');
+
+      } catch (error) {
+        
+        console.error('Toggle like failed:', error);
+        ElMessage.error('操作失败，请重试');
+        
+        post.liked = oldLiked;
+        post.likes = oldLikes;
+      }
+    },
+
   },
 });

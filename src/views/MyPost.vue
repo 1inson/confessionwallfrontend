@@ -6,7 +6,7 @@ import type { ConfessionCreationData, Confession, ConfessionUpdateData } from '@
 
 import { ElMessage, ElMessageBox } from 'element-plus';
 import type { FormInstance, FormRules, UploadProps, UploadUserFile } from 'element-plus';
-import { Plus } from '@element-plus/icons-vue'; 
+import { Plus, View, Star } from '@element-plus/icons-vue'; 
 
 const confessionStore = useConfessionStore();
 const userStore = useUserStore(); 
@@ -19,7 +19,12 @@ const loadPosts = () => {
 };
 watch(() => userStore.isLoggedIn, (isLoggedIn) => {
   if (isLoggedIn) {
-    loadPosts();
+
+    if (confessionStore.myConfessions.length === 0) {
+
+      console.log('User is logged in, fetching initial posts...');
+      confessionStore.fetchMyConfessions({ page: 0, size: 10 });
+    }
   }
 }, { immediate: true });
 
@@ -187,6 +192,11 @@ const handleUpdateSubmit = async () => {
     isDialogVisible.value = false;
   }
 };
+
+//点赞
+const handleLike = (post: Confession) => {
+  confessionStore.toggleLike(post.id);
+};
 </script>
 
 
@@ -266,7 +276,13 @@ const handleUpdateSubmit = async () => {
       <el-card v-for="post in confessionStore.myConfessions" :key="post.id" class="post-card">
         <template #header>
           <div class="card-header">
-            <span>{{ post.title }}</span>
+            <div class="user-info">
+            <el-avatar :size="40" :src="post.avatar" />
+            <div class="user-details">
+              <span class="user-name">{{ post.name }}</span>
+              <span class="post-time">发布于: {{ post.create_at }}</span>
+            </div>
+          </div>
 
             <!--删除按钮-->
             <el-button 
@@ -290,7 +306,34 @@ const handleUpdateSubmit = async () => {
 
           </div>
         </template>
+              <div class="post-body">
+        <h3 class="post-title">{{ post.title }}</h3>
         <p class="post-content">{{ post.content }}</p>
+
+        <div v-if="post.photos && post.photos.length > 0" class="post-images">
+          <!-- el-image 提供了懒加载和预览功能 -->
+          <el-image
+            v-for="(photoUrl, index) in post.photos"
+            :key="index"
+            :src="photoUrl"
+            :preview-src-list="post.photos"
+            :initial-index="index"
+            fit="cover"
+            class="post-image"
+          />
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <div class="meta-item">
+          <el-icon><View /></el-icon>
+          <span>{{ post.views }} 次浏览</span>
+        </div>
+        <div class="meta-item interactive" @click="handleLike(post)">
+          <el-icon :color="post.liked ? '#F56C6C' : ''"><Star /></el-icon>
+          <span>{{ post.likes }} 次点赞</span>
+        </div>
+      </div>
       </el-card>
     </div>
 
@@ -384,10 +427,70 @@ const handleUpdateSubmit = async () => {
   margin-bottom: 20px;
 }
 
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.user-details {
+  display: flex;
+  flex-direction: column;
+}
+.user-name {
+  font-weight: bold;
+  color: #303133;
+}
+.post-time {
+  font-size: 12px;
+  color: #909399;
+}
+
 .post-content {
   white-space: pre-wrap; /* 保留换行和空格 */
   word-break: break-word; /* 防止长单词溢出 */
 }
+
+.post-images {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+}
+.post-image {
+  width: 100%;
+  height: 120px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: flex-end; /* 右对齐 */
+  gap: 20px;
+  padding: 16px 20px 0; 
+  border-top: 1px solid #e4e7ed;
+  margin-top: 16px;
+}
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #909399;
+}
+.meta-item.interactive {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.meta-item.interactive:hover {
+  color: #409eff;
+}
+
 .pagination-container {
   display: flex;
   justify-content: center;

@@ -36,6 +36,8 @@ export interface PaginationParams {
   size: number; 
 }
 export interface PaginatedConfessionsResponse {
+  msg: string;
+  code: number;
   posts: Confession[];
   total: number;
   pages: number;
@@ -60,4 +62,9 @@ export interface ConfessionUpdateData {
 }
 export function updateConfessionApi(id: number, data: ConfessionUpdateData): Promise<Confession> {
   return service.put(`/confessions/${id}`, data);
+}
+
+//点赞
+export function toggleLikeApi(id: number): Promise<Confession> {
+  return service.post(`/confessions/${id}/like`);
 }
