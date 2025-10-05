@@ -7,7 +7,7 @@ import type { ConfessionCreationData, Confession, ConfessionUpdateData } from '@
 
 import { ElMessage, ElMessageBox } from 'element-plus';
 import type { FormInstance, FormRules, UploadProps, UploadUserFile } from 'element-plus';
-import { Plus, View, Star } from '@element-plus/icons-vue'; 
+import { Plus, View, Pointer } from '@element-plus/icons-vue'; 
 
 const confessionStore = useConfessionStore();
 const userStore = useUserStore(); 
@@ -326,7 +326,7 @@ const handleLike = (post: Confession) => {
           <span>{{ post.views }} 次浏览</span>
         </div>
         <div class="meta-item interactive" @click="handleLike(post)">
-          <el-icon :color="post.liked ? '#F56C6C' : ''"><Star /></el-icon>
+          <el-icon :color="post.liked ? '#F56C6C' : ''"><Pointer /></el-icon>
           <span>{{ post.likes }} 次点赞</span>
         </div>
       </div>

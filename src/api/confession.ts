@@ -74,3 +74,8 @@ export function updateConfessionApi(id: number, data: ConfessionUpdateData): Pro
 export function toggleLikeApi(id: number): Promise<Confession> {
   return service.post(`/confessions/${id}/like`);
 }
+
+//热度排行
+export function getHotConfessionsApi(params: PaginationParams): Promise<PaginatedConfessionsResponse> {
+  return service.get('/confessions/hot', { params });
+}

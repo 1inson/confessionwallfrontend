@@ -3,8 +3,9 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { createConfessionApi, type Confession, type ConfessionCreationData,
   getMyConfessionsApi, type PaginationParams, getAllConfessionsApi,
   deleteConfessionApi, updateConfessionApi, type ConfessionUpdateData,
-  toggleLikeApi, 
+  toggleLikeApi, getHotConfessionsApi, 
  } from '@/api/confession';
+import HotPostsList from '@/components/HotPostsList.vue';
 
 export const useConfessionStore = defineStore('confession', {
   state: () => ({
@@ -13,13 +14,16 @@ export const useConfessionStore = defineStore('confession', {
     MAX_PHOTOS: 9 as const,
     totalItems: 0,
     totalPages: 0,
-    currentPage: 0, //api上为0(??)
+    currentPage: 0, 
 
     allConfessions: [] as Confession[], 
     allTotalItems: 0,                   
     allTotalPages: 0,                  
     allCurrentPage: 1,                 
     isUpdating: false,
+
+    hotConfessions: [] as Confession[], // 存放热帖列表
+    isLoadingHot: false,  
   }),
   actions: {
     async createConfession(confessionData: ConfessionCreationData) {
@@ -86,6 +90,25 @@ export const useConfessionStore = defineStore('confession', {
         this.isLoading = false;
       }
     },
+
+    // 获取热门帖子列表
+    async fetchHotConfessions() {
+
+      if (this.hotConfessions.length > 0) return;
+
+      this.isLoadingHot = true;
+      try {
+        // 排行榜的前5条
+        const responseData = await getHotConfessionsApi({ page: 1, size: 5 });
+        this.hotConfessions = responseData.posts;
+      } catch (error) {
+        console.error('获取热度排行榜失败:', error);
+      } finally {
+        this.isLoadingHot = false;
+      }
+    },
+
+
 
     // 删除帖子
     async deleteConfession(id: number) {

@@ -47,7 +47,7 @@ body {
 }
 .main-content {
   transition: margin 0.3s ease;
-  height: 100vh;
+  
   box-sizing: border-box;
 }
 .main-content.content-shifted {

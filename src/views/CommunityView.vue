@@ -2,8 +2,8 @@
 import { onMounted } from 'vue';
 import { useConfessionStore,  } from '@/stores/confessionStore';
 import { storeToRefs } from 'pinia';
-import { View, Star } from '@element-plus/icons-vue';
-
+import { View, Pointer } from '@element-plus/icons-vue';
+import  HotPostsList from '@/components/HotPostsList.vue';
 import type { Confession } from '@/api/confession';
 const confessionStore = useConfessionStore();
 const { allConfessions, allTotalItems, allCurrentPage, isLoading } = storeToRefs(confessionStore);
@@ -21,7 +21,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="community-home">
+    <div class="community-home">
+    <aside class="sidebar-left">
+      <HotPostsList />
+    </aside>
+  <div class="main-content">
     <h1>社区广场</h1>
 
     <div v-if="isLoading" class="loading">加载中...</div>
@@ -67,7 +71,7 @@ onMounted(() => {
             <span>{{ post.views }} 次浏览</span>
           </div>
           <div class="meta-item interactive" @click="handleLike(post)">
-            <el-icon :color="!post.liked ? '#F56C6C' : ''"><Star /></el-icon>
+            <el-icon :color="!post.liked ? '#F56C6C' : ''"><Pointer /></el-icon>
             <span>{{ post.likes }} 次点赞</span>
           </div>
         </div>
@@ -85,14 +89,32 @@ onMounted(() => {
       />
     </div>
   </div>
+  </div>
 </template>
 
 <style scoped> 
 .community-home {
-  max-width: 800px; 
-  margin: 0 auto; 
-  padding: 20px 20px; 
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  display: flex;
+  gap: 20px;
+  align-items: flex-start; 
   background-color: var(--primary-color);
+}
+
+.sidebar-left {
+  flex-shrink: 0;
+  width: 400px;
+  position: sticky;
+  top: 20px;
+  order: 1; 
+}
+
+.main-content {
+  flex-grow: 1;
+  min-width: 0;
+  order: 2;
 }
 
 h1 {
