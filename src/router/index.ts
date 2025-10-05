@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import AuthView from '../views/AuthView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import MyPost from '../views/MyPost.vue'
+import CommunityView from '@/views/CommunityView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -35,6 +36,14 @@ const router = createRouter({
       component: MyPost,
       meta: { requiresAuth: true }
     },
+
+    {
+      //社区帖子页
+      path: '/community',
+      name: 'community',
+      component: CommunityView,
+      meta: { requiresAuth: true }
+    }
 
     
   ],

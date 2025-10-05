@@ -11,6 +11,7 @@ import { Plus, View, Star } from '@element-plus/icons-vue';
 
 const confessionStore = useConfessionStore();
 const userStore = useUserStore(); 
+const { myConfessions, totalItems, currentPage, isLoading } = storeToRefs(confessionStore);
 
 const loadInitialPosts = () => {
   if (userStore.isLoggedIn) {
@@ -113,7 +114,6 @@ const handleSubmit = async () => {
 
 //页数变化
 const handlePageChange = (newPage: number) => {
-
   confessionStore.fetchMyConfessions({ page: newPage , size: 10 });
 };
 
@@ -389,7 +389,7 @@ const handleLike = (post: Confession) => {
         layout="total, prev, pager, next"
         :total="confessionStore.totalItems"
         :page-size="10"
-        :current-page="confessionStore.currentPage + 1"
+        v-model:current-page="currentPage"
         @current-change="handlePageChange"
       />
     </div>

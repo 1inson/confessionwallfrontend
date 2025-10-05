@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { createConfessionApi, type Confession, type ConfessionCreationData,
-  getMyConfessionsApi, type PaginationParams,
+  getMyConfessionsApi, type PaginationParams, getAllConfessionsApi,
   deleteConfessionApi, updateConfessionApi, type ConfessionUpdateData,
   toggleLikeApi, 
  } from '@/api/confession';
@@ -14,6 +14,11 @@ export const useConfessionStore = defineStore('confession', {
     totalItems: 0,
     totalPages: 0,
     currentPage: 0, //api上为0(??)
+
+    allConfessions: [] as Confession[], 
+    allTotalItems: 0,                   
+    allTotalPages: 0,                  
+    allCurrentPage: 1,                 
     isUpdating: false,
   }),
   actions: {
@@ -42,6 +47,7 @@ export const useConfessionStore = defineStore('confession', {
       }
     },
 
+    // 获取我的帖子列表
     async fetchMyConfessions(params: PaginationParams){
        this.isLoading = true;
       try {
@@ -57,6 +63,27 @@ export const useConfessionStore = defineStore('confession', {
         ElMessage.error('加载帖子失败，请稍后重试。');
       } finally {
         this.isLoading = false; // 结束加载
+      }
+    },
+
+     // 获取社区所有帖子列表
+    async fetchAllConfessions(params: PaginationParams) {
+      this.isLoading = true;
+      try {
+        // 调用新增的 API 函数
+        const responseData = await getAllConfessionsApi(params);
+
+        // 将返回的数据赋值给新增的 state
+        this.allConfessions = responseData.posts;
+        this.allTotalItems = responseData.total;
+        this.allTotalPages = responseData.pages;
+        this.allCurrentPage = responseData.current;
+
+      } catch (error) {
+        console.error('获取社区帖子列表失败:', error);
+        ElMessage.error('加载社区帖子失败，请稍后重试。');
+      } finally {
+        this.isLoading = false;
       }
     },
 

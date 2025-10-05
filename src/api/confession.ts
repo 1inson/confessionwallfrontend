@@ -47,6 +47,13 @@ export function getMyConfessionsApi(params: PaginationParams): Promise<Paginated
   return service.get('/confessions/my',  {params });
 }
 
+
+//获取社区所有帖子列表
+export function getAllConfessionsApi(params: PaginationParams): Promise<PaginatedConfessionsResponse> {
+  return service.get('/confessions', { params });
+}
+
+
 //删除帖子
 export function deleteConfessionApi(id: number): Promise<void> {
   return service.delete(`/confessions/${id}`);
