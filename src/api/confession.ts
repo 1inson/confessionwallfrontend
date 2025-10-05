@@ -41,14 +41,10 @@ export interface PaginatedConfessionsResponse {
   pages: number;
   current: number;
 }
-interface ApiResponse<T> {
-  msg: string;
-  code: number;
-  data: T;
-}
 
-export function getMyConfessionsApi(params: PaginationParams): Promise<ApiResponse<PaginatedConfessionsResponse>> {
-  return service.post('/confessions/my',  params );
+
+export function getMyConfessionsApi(params: PaginationParams): Promise<PaginatedConfessionsResponse> {
+  return service.get('/confessions/my',  {params });
 }
 
 //删除帖子

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { reactive, ref, watch, onMounted } from 'vue';
+import { storeToRefs } from 'pinia'; 
 import { useConfessionStore } from '@/stores/confessionStore';
 import { useUserStore } from '@/stores/userStore'; 
 import type { ConfessionCreationData, Confession, ConfessionUpdateData } from '@/api/confession';
@@ -11,15 +12,15 @@ import { Plus, View, Star } from '@element-plus/icons-vue';
 const confessionStore = useConfessionStore();
 const userStore = useUserStore(); 
 
-const loadPosts = () => {
-  // 只有在确认登录后才加载数据
+const loadInitialPosts = () => {
   if (userStore.isLoggedIn) {
-    confessionStore.fetchMyConfessions;
+    confessionStore.fetchMyConfessions({ page: 1, size: 10 });
   }
 };
+
 watch(() => userStore.isLoggedIn, (isLoggedIn) => {
   if (isLoggedIn) {
-    loadPosts();
+    loadInitialPosts();
   }
 }, { immediate: true });
 

@@ -47,10 +47,10 @@ export const useConfessionStore = defineStore('confession', {
       try {
         const responseData = await getMyConfessionsApi(params);
 
-        this.myConfessions = responseData.data.posts;
-        this.totalItems = responseData.data.total;
-        this.totalPages = responseData.data.pages;
-        this.currentPage = responseData.data.current;
+        this.myConfessions = responseData.posts;
+        this.totalItems = responseData.total;
+        this.totalPages = responseData.pages;
+        this.currentPage = responseData.current;
 
       } catch (error) {
         console.error('获取帖子列表失败:', error);
