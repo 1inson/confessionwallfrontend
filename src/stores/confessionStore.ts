@@ -5,8 +5,9 @@ import { createConfessionApi, type Confession, type ConfessionCreationData,
   deleteConfessionApi, updateConfessionApi, type ConfessionUpdateData,
   toggleLikeApi, getHotConfessionsApi, 
   getConfessionByIdApi, type ConfessionDetail, 
+  postCommentApi, type NewCommentPayload, type NewCommentResponse, type Comment, 
  } from '@/api/confession';
-import { fi } from 'element-plus/es/locales.mjs';
+import { useUserStore } from '@/stores/userStore';
 
 export const useConfessionStore = defineStore('confession', {
   state: () => ({
@@ -199,6 +200,69 @@ export const useConfessionStore = defineStore('confession', {
         this.isLoadingDetail = false;
       }
     },
+
+    //评论
+    async addComment(payload: { postId: number; content: string; parentId?: number }) {
+      const userStore = useUserStore();
+      const commentPayload: NewCommentPayload = {
+        content: payload.content,
+        parentId: payload.parentId || 0,
+      };
+
+      //乐观更新
+      const tempCommentId = Date.now(); 
+      const optimisticComment: Comment = {
+        id: tempCommentId, 
+        post_id: payload.postId,
+        parent_id: commentPayload.parentId,
+        root_id: 0, 
+        content: payload.content,
+        username: userStore.profile?.username || '我', 
+        create_at: new Date().toISOString(), 
+        update_at: new Date().toISOString(),
+      };
+      
+      // 列表顶部
+      if (this.currentPostDetail) {
+        this.currentPostDetail.comments.unshift(optimisticComment);
+      }
+
+      try {
+
+        const newCommentData = await postCommentApi(payload.postId, commentPayload);
+
+        if (this.currentPostDetail) {
+          const commentIndex = this.currentPostDetail.comments.findIndex(c => c.id === tempCommentId);
+          if (commentIndex !== -1) {
+            const finalComment: Comment = {
+              post_id: newCommentData.post_id,
+              parent_id: newCommentData.parent_id,
+              root_id: newCommentData.root_id,
+              create_at: newCommentData.create_at,
+              update_at: newCommentData.update_at,
+              id: newCommentData.id,
+              username: newCommentData.username,
+              content: newCommentData.content,
+            };
+            // 替换
+            this.currentPostDetail.comments[commentIndex] = finalComment;
+          }
+        }
+        ElMessage.success('评论发布成功！');
+
+      } catch (error) {
+        console.error('发布评论失败:', error);
+        ElMessage.error('评论失败，请稍后重试');
+
+        if (this.currentPostDetail) {
+          this.currentPostDetail.comments = this.currentPostDetail.comments.filter(
+            c => c.id !== tempCommentId
+          );
+        }
+        throw error;
+      }
+    },
+
 
   },
 });

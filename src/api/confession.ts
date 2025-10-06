@@ -100,3 +100,24 @@ export interface ConfessionDetail extends Confession {
 export function getConfessionByIdApi(id: number): Promise<ConfessionDetail> {
   return service.get(`/confessions/${id}`);
 }
+
+//发布评论
+export interface NewCommentPayload {
+  parentId: number;
+  content: string;
+}
+
+export interface NewCommentResponse {
+  post_id: number;
+  parent_id: number;
+  root_id: number;
+  create_at: string;
+  update_at: string;
+  id: number;
+  username: string;
+  content: string;
+}
+
+export function postCommentApi(postId: number, data: NewCommentPayload): Promise<NewCommentResponse> {
+  return service.post(`/confessions/${postId}/comments`, data);
+}

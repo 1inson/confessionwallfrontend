@@ -1,15 +1,40 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useConfessionStore } from '@/stores/confessionStore';
 import { storeToRefs } from 'pinia';
 
 import { View, Pointer } from '@element-plus/icons-vue';
+import { ElMessage, ElInput, ElButton, ElAvatar, ElImage, ElEmpty } from 'element-plus';
 
 const route = useRoute();
 const confessionStore = useConfessionStore();
 
 const { currentPostDetail: post, isLoadingDetail } = storeToRefs(confessionStore);
+
+// 评论
+const newCommentText = ref('');
+const isSubmitting = ref(false);
+const submitComment = async () => {
+  if (!newCommentText.value.trim() || !post.value) {
+    ElMessage.warning('评论内容不能为空！');
+    return;
+  }
+  isSubmitting.value = true;
+  try {
+    await confessionStore.addComment({
+      postId: post.value.id,
+      content: newCommentText.value,
+    });
+
+    newCommentText.value = '';
+  } catch (error) {
+    console.error('发布评论失败:', error);
+    ElMessage.error('评论失败，请稍后重试');
+  } finally {
+    isSubmitting.value = false;
+  }
+};
 
 onMounted(() => {
 
@@ -61,7 +86,35 @@ onMounted(() => {
       <!-- 评论区  -->
       <div class="comments-section">
         <h2>评论区 ({{ post.comments.length }})</h2>
-        <!-- 评论功能将在这里实现 -->
+        <div class.comment-form>
+        <el-input
+          v-model="newCommentText"
+          type="textarea"
+          :rows="4"
+          placeholder="发表你的看法..."
+          maxlength="200"
+          show-word-limit
+        />
+        <el-button 
+          type="primary" 
+          @click="submitComment" 
+          :loading="isSubmitting"
+          style="margin-top: 10px; float: right;"
+        >
+          发布评论
+        </el-button>
+        </div>
+      </div>
+
+      <div class.comment-list>
+        <div v-if="post && post.comments.length > 0">
+          <div v-for="comment in post.comments" :key="comment.id" class="comment-item">
+            <div class="comment-author">{{ comment.username }}</div>
+            <div class="comment-content">{{ comment.content }}</div>
+            <div class="comment-meta">{{ comment.create_at }}</div>
+          </div>
+        </div>
+        <el-empty v-else description="还没有评论，快来抢占第一个沙发！" />
       </div>
     </div>
 
@@ -133,6 +186,32 @@ onMounted(() => {
 .loading-state, .empty-state { 
   text-align: center; 
   padding: 50px; 
+}
+
+.comments-section { 
+  margin-top: 40px; 
+  padding-top: 20px;
+  border-top: 1px solid #eee; 
+}
+.comment-form {
+  margin-top: 20px;
+  margin-bottom: 40px; 
+}
+.comment-item {
+  padding: 15px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.comment-author {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+.comment-content {
+  color: #333;
+  margin-bottom: 10px;
+}
+.comment-meta {
+  font-size: 0.8em;
+  color: #999;
 }
 
 </style>
