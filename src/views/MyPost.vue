@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { reactive, ref, watch, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia'; 
 import { useConfessionStore } from '@/stores/confessionStore';
 import { useUserStore } from '@/stores/userStore'; 
@@ -11,6 +12,7 @@ import { Plus, View, Pointer } from '@element-plus/icons-vue';
 
 const confessionStore = useConfessionStore();
 const userStore = useUserStore(); 
+const router = useRouter(); 
 const { myConfessions, totalItems, currentPage, isLoading } = storeToRefs(confessionStore);
 
 const loadInitialPosts = () => {
@@ -36,6 +38,11 @@ const form = reactive<ConfessionCreationData>({
   send_time: ' ',
 
 });
+
+//跳转到详细页
+const navigateToDetail = (postId: number) => {
+  router.push(`/confessions/${postId}`);
+};
 
 //检验
 const validatePhotos = (rule: any, value: string[], callback: any) => {
@@ -302,7 +309,7 @@ const handleLike = (post: Confession) => {
 
           </div>
         </template>
-              <div class="post-body">
+      <div class="post-body" @click="navigateToDetail(post.id)">
         <h3 class="post-title">{{ post.title }}</h3>
         <p class="post-content">{{ post.content }}</p>
 
@@ -326,7 +333,7 @@ const handleLike = (post: Confession) => {
           <span>{{ post.views }} 次浏览</span>
         </div>
         <div class="meta-item interactive" @click="handleLike(post)">
-          <el-icon :color="post.liked ? '#F56C6C' : ''"><Pointer /></el-icon>
+          <el-icon :color="!post.liked ? '#F56C6C' : ''"><Pointer /></el-icon>
           <span>{{ post.likes }} 次点赞</span>
         </div>
       </div>

@@ -4,8 +4,9 @@ import { createConfessionApi, type Confession, type ConfessionCreationData,
   getMyConfessionsApi, type PaginationParams, getAllConfessionsApi,
   deleteConfessionApi, updateConfessionApi, type ConfessionUpdateData,
   toggleLikeApi, getHotConfessionsApi, 
+  getConfessionByIdApi, type ConfessionDetail, 
  } from '@/api/confession';
-import HotPostsList from '@/components/HotPostsList.vue';
+import { fi } from 'element-plus/es/locales.mjs';
 
 export const useConfessionStore = defineStore('confession', {
   state: () => ({
@@ -24,6 +25,9 @@ export const useConfessionStore = defineStore('confession', {
 
     hotConfessions: [] as Confession[], // 存放热帖列表
     isLoadingHot: false,  
+
+    currentPostDetail: null as ConfessionDetail | null, 
+    isLoadingDetail: false,
   }),
   actions: {
     async createConfession(confessionData: ConfessionCreationData) {
@@ -177,6 +181,22 @@ export const useConfessionStore = defineStore('confession', {
         
         post.liked = oldLiked;
         post.likes = oldLikes;
+      }
+    },
+
+    // 获取帖子详情
+    async fetchConfessionDetail(id: number) {
+      this.isLoadingDetail = true;
+      this.currentPostDetail = null;
+
+      try {
+        const responseData = await getConfessionByIdApi(id);
+        this.currentPostDetail = responseData;
+      } catch(error){
+        console.error(`获取帖子详情 (ID: ${id}) 失败:`, error);
+        ElMessage.error('加载帖子失败，请稍后再试');
+      } finally{
+        this.isLoadingDetail = false;
       }
     },
 

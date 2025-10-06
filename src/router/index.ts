@@ -3,6 +3,7 @@ import AuthView from '../views/AuthView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import MyPost from '../views/MyPost.vue'
 import CommunityView from '@/views/CommunityView.vue'
+import PostDetailPage from '@/views/PostDetailPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -43,8 +44,15 @@ const router = createRouter({
       name: 'community',
       component: CommunityView,
       meta: { requiresAuth: true }
-    }
+    },
 
+    // 帖子详情页
+    {
+     path: '/confessions/:id',
+     name: 'post-detail',
+     component: PostDetailPage,
+     meta: { requiresAuth: true }
+    },
     
   ],
 })

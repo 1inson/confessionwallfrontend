@@ -1,11 +1,13 @@
 import { defineStore } from 'pinia'
 import axios from 'axios';
+import { ElMessage } from 'element-plus';
 
 import { refreshTokenApi,
   registerApi, type RegisterData,
    loginApi, type LoginData,
    type AuthTokens, getProfileApi, type UserProfile,
-    updateProfileApi,  type UpdateProfileData, uploadImageApi, type ImageUploadResponse} from '@/api/user' 
+    updateProfileApi,  type UpdateProfileData, uploadImageApi, type ImageUploadResponse,
+     } from '@/api/user' 
 
 import router from '@/router'
 
@@ -13,11 +15,21 @@ export const useUserStore = defineStore('user', {
   state: () => ({
     accessToken: localStorage.getItem('accessToken') || '',
     refreshToken: localStorage.getItem('refreshToken') || '',
+
     profile: null as UserProfile | null, // 用来存放用户信息
+
+    blacklist: [] as UserProfile[], 
+    isLoadingBlacklist: false,
+
   }),
   getters: {
     // 用于路由守卫判断登录状态
     isLoggedIn: (state) => !!state.accessToken||!!state.refreshToken,
+
+    // 用户是否被拉黑
+    blockedUsernamesSet(state): Set<string> {
+      return new Set(state.blacklist.map(user => user.username));
+    },
   },
   actions: {
 
@@ -88,7 +100,7 @@ export const useUserStore = defineStore('user', {
       }
     },
 
-    // 获取用户信息
+    // 获取用户(自己)信息
     async fetchUserProfile() {
       if (!this.accessToken) return;
 
@@ -160,7 +172,7 @@ export const useUserStore = defineStore('user', {
       }
     },
 
-
+  
   },
 
   },

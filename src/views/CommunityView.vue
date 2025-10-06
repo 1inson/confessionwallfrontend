@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { useConfessionStore,  } from '@/stores/confessionStore';
 import { storeToRefs } from 'pinia';
 import { View, Pointer } from '@element-plus/icons-vue';
 import  HotPostsList from '@/components/HotPostsList.vue';
 import type { Confession } from '@/api/confession';
 const confessionStore = useConfessionStore();
+const router = useRouter();
 const { allConfessions, allTotalItems, allCurrentPage, isLoading } = storeToRefs(confessionStore);
 
 const handlePageChange = (newPage: number) => {
@@ -13,6 +15,10 @@ const handlePageChange = (newPage: number) => {
 };
 const handleLike = (post: Confession) => {
   confessionStore.toggleLike(post);
+};
+
+const navigateToDetail = (postId: number) => {
+  router.push(`/confessions/${postId}`);
 };
 
 onMounted(() => {
@@ -31,7 +37,7 @@ onMounted(() => {
     <div v-if="isLoading" class="loading">加载中...</div>
 
     <div v-else-if="confessionStore.allConfessions.length > 0" class="posts-list">
-      <el-card v-for="post in confessionStore.allConfessions" :key="post.id" class="post-card">
+      <el-card v-for="post in confessionStore.allConfessions" :key="post.id" class="post-card" >
         <template #header>
           <div class="card-header">
             <!-- 用户信息部分 -->
@@ -46,7 +52,7 @@ onMounted(() => {
         </template>
         
         <!-- 帖子主体内容 -->
-        <div class="post-body">
+        <div class="post-body" @click="navigateToDetail(post.id)">
           <h3 class="post-title">{{ post.title }}</h3>
           <p class="post-content">{{ post.content }}</p>
 

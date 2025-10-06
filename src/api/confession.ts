@@ -79,3 +79,24 @@ export function toggleLikeApi(id: number): Promise<Confession> {
 export function getHotConfessionsApi(params: PaginationParams): Promise<PaginatedConfessionsResponse> {
   return service.get('/confessions/hot', { params });
 }
+
+//评论
+export interface Comment {
+  post_id: number;
+  parent_id: number;
+  root_id: number;
+  create_at: string;
+  update_at: string;
+  id: number;
+  username: string;
+  content: string;
+  replies?: Comment[];
+}
+
+//获取帖子详情(继承)
+export interface ConfessionDetail extends Confession {
+  comments: Comment[];
+}
+export function getConfessionByIdApi(id: number): Promise<ConfessionDetail> {
+  return service.get(`/confessions/${id}`);
+}
