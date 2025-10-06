@@ -39,7 +39,7 @@ export function loginApi(data: LoginData): Promise<AuthTokens> {
   return service.post('/users/login', data);
 }
 
-//查看用户信息
+//查看用户信息(个人)
 export interface UserProfile {
   user_id: string;
   username: string;
@@ -50,6 +50,11 @@ export interface UserProfile {
 
 export function getProfileApi(): Promise<UserProfile> {
   return service.get('/users/me');
+}
+
+//查看用户信息(其他)
+export function getUserProfileApi(username: string): Promise<UserProfile> {
+  return service.get(`/users/${username}`);
 }
 
 //修改用户信息
@@ -68,4 +73,15 @@ export interface ImageUploadResponse {
 }
 export function uploadImageApi(formData: FormData): Promise<ImageUploadResponse> {
   return service.post('/image/upload', formData);
+}
+
+//黑名单
+export function getBlacklistApi(): Promise<{ users: string[] }> {
+  return service.get('/users/blacklist');
+}
+export function blockUserApi(username: string): Promise<any> {
+  return service.post(`/users/blacklist/${username}`);
+}
+export function unblockUserApi(username: string): Promise<any> {
+  return service.delete(`/users/blacklist/${username}`);
 }

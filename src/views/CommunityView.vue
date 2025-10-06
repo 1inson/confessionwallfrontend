@@ -21,6 +21,10 @@ const navigateToDetail = (postId: number) => {
   router.push(`/confessions/${postId}`);
 };
 
+const navigateToProfileDetail = (username: string) => {
+  router.push(`/users/${username}`);
+};
+
 onMounted(() => {
   confessionStore.fetchAllConfessions({ page: 1, size: 10 });
 });
@@ -41,7 +45,7 @@ onMounted(() => {
         <template #header>
           <div class="card-header">
             <!-- 用户信息部分 -->
-            <div class="user-info">
+            <div class="user-info" @click ="navigateToProfileDetail(post.poster_name)">
               <el-avatar :size="40" :src="post.avatar" />
               <div class="user-details">
                 <span class="user-name">{{ post.name }}</span>

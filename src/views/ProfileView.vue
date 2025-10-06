@@ -62,12 +62,37 @@
       </div>
     </div>
   </div>
+
+
+      <div class="blacklist-panel">
+          <h3>黑名单</h3>
+          <p>被屏蔽的用户将无法与您互动，您也看不到他们的内容。</p>
+
+          <div v-if="isLoadingBlacklist" class="loading">加载中...</div>
+          <div v-else-if="blacklist.length === 0" class="empty">您还没有屏蔽任何用户。</div>
+          <div v-else class="user-list">
+            <div v-for="user in blacklist" :key="user.user_id" class="user-item">
+              <div class="user-info">
+                <el-avatar :src="user.avatar" />
+                <div class="name-details">
+                  <span class="name">{{ user.name }}</span>
+                  <span class="username">@{{ user.username }}</span>
+                </div>
+              </div>
+              <el-button type="danger" plain @click="unblockUser(user.username)">
+                取消屏蔽
+              </el-button>
+            </div>
+          </div>
+        </div>
+      
 </template>
 
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue';
 import { useUserStore } from '@/stores/userStore';
 import axios from 'axios';
+import { storeToRefs } from 'pinia';
 import { UserFilled } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 
@@ -94,10 +119,29 @@ const getAvatarUrl = (avatarPath: string | null | undefined): string => {
   return avatarPath;
 };
 
+const { 
+  blacklist, 
+  isLoadingBlacklist 
+} = storeToRefs(userStore);
+
+const unblockUser = (username: string) => {
+  ElMessageBox.confirm(`确定要取消屏蔽 @${username} 吗？`, '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  }).then(() => {
+    userStore.unblockUser(username);
+    ElMessage.success('操作成功');
+  }).catch(() => {
+    ElMessage.info('操作已取消');
+  });
+};
+
 onMounted(() => {
   if (!userStore.profile) {
     userStore.fetchUserProfile();
   }
+  userStore.fetchBlacklistUsernames();
 });
 
 watch(() => userStore.profile, (newProfile) => {
@@ -213,7 +257,7 @@ const handleProfileUpdate = async () => {
   justify-content: center; 
   align-items: flex-start;
   padding: 50px 15px; 
-  min-height: 100vh; 
+  min-height: 30vh; 
   background-color: #ffffff;/* 背景颜色 */
   color: #e0e0e0; 
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -360,6 +404,65 @@ const handleProfileUpdate = async () => {
 }
 .save-button:hover { 
   background-color: #1a8cd8; 
+}
+
+/* 黑名单 */
+.blacklist-panel {
+  background-color: #fff;
+  padding: 0 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.blacklist-panel h3 {
+  font-size: 1.5em;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.blacklist-panel p {
+  font-size: 0.9em;
+  color: #888;
+  margin-top: 0;
+  margin-bottom: 30px; 
+}
+
+.user-list {
+  display: flex;
+  flex-direction: column;
+}
+.user-item { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  padding: 16px 0; 
+  border-bottom: 1px solid #f0f0f0; 
+  transition: background-color 0.2s;
+}
+.user-item:last-child {
+  border-bottom: none; 
+}
+.user-item:hover {
+  background-color: #fafafa; 
+}
+.user-info { 
+  display: flex; 
+  align-items: center; 
+  gap: 15px; 
+}
+.name-details { 
+  display: flex; 
+  flex-direction: column; 
+}
+.name { 
+  font-weight: 600; 
+  color: #303133;
+}
+.username { 
+  color: #909399; 
+  font-size: 0.9em; 
 }
 
 </style>

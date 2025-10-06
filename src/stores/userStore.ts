@@ -7,6 +7,8 @@ import { refreshTokenApi,
    loginApi, type LoginData,
    type AuthTokens, getProfileApi, type UserProfile,
     updateProfileApi,  type UpdateProfileData, uploadImageApi, type ImageUploadResponse,
+    getUserProfileApi, 
+    blockUserApi, unblockUserApi, getBlacklistApi,
      } from '@/api/user' 
 
 import router from '@/router'
@@ -20,6 +22,10 @@ export const useUserStore = defineStore('user', {
 
     blacklist: [] as UserProfile[], 
     isLoadingBlacklist: false,
+    blockedUsernames: new Set<string>(),
+
+    viewingUserProfile: null as UserProfile | null, // 当前正在查看的用户信息
+    isLoadingProfile: false, 
 
   }),
   getters: {
@@ -27,8 +33,8 @@ export const useUserStore = defineStore('user', {
     isLoggedIn: (state) => !!state.accessToken||!!state.refreshToken,
 
     // 用户是否被拉黑
-    blockedUsernamesSet(state): Set<string> {
-      return new Set(state.blacklist.map(user => user.username));
+    isBlocked: (state) => {
+      return (username: string): boolean => !!state.blacklist.find(user=>user.username === username);
     },
   },
   actions: {
@@ -113,6 +119,24 @@ export const useUserStore = defineStore('user', {
       }
     },
 
+    // 获取其他用户信息
+    async fetchotherUserProfile(username: string) {
+      this.isLoadingProfile = true;
+      this.viewingUserProfile = null; 
+      
+      try {
+        const userProfileData = await getUserProfileApi(username);
+        this.viewingUserProfile = userProfileData;
+        return true; 
+      } catch (error) {
+        console.error(`获取用户 @${username} 信息失败:`, error);
+        ElMessage.error('无法加载用户信息');
+        return false;
+      } finally {
+        this.isLoadingProfile = false;
+      }
+    },
+
     logout() {
       this.accessToken = '';
       this.refreshToken = '';
@@ -171,6 +195,55 @@ export const useUserStore = defineStore('user', {
         throw error; 
       }
     },
+
+    // 拉黑用户
+    async fetchBlacklistUsernames() {
+      this.isLoadingBlacklist = true;
+      this.blacklist = []; 
+      try {
+        console.log('开始执行...');
+
+        const { users: usernames } = await getBlacklistApi();
+         if (!usernames || usernames.length === 0) {
+        return; 
+      }
+        const profilePromises = usernames.map(username => getUserProfileApi(username));
+        const profiles = await Promise.all(profilePromises);
+        this.blacklist = profiles;
+        console.log('获取黑名单成功:', this.blockedUsernames);
+      } catch (error) {
+        console.error('获取黑名单失败:', error);
+        ElMessage.error('获取黑名单失败');
+       } 
+      finally { this.isLoadingBlacklist = false; }
+    },
+    
+    async blockUser(username: string) {
+      try {
+        await blockUserApi(username);
+        
+        ElMessage.success(`已屏蔽 @${username}`);
+        await this.fetchBlacklistUsernames();
+
+      } catch (error) { 
+        console.error(`屏蔽用户 @${username} 失败:`, error);
+        ElMessage.error(`屏蔽用户 @${username} 失败`);
+       }
+    },
+
+    async unblockUser(username: string) {
+      try {
+        await unblockUserApi(username);
+        this.blacklist = this.blacklist.filter(
+      user => user.username !== username
+    );
+        ElMessage.success(`已取消对 @${username} 的屏蔽`);
+      } catch (error) { 
+        console.error(`取消屏蔽用户 @${username} 失败:`, error);
+        ElMessage.error(`取消屏蔽用户 @${username} 失败`);
+       }
+    },
+
 
   
   },

@@ -74,7 +74,7 @@ const fontSizes = [
   position: fixed;
   left: 0;
   top: 0; 
-  height: calc(100vh - 60px); 
+  height: 100%; 
   z-index: 1000;
   box-shadow: 2px 0 5px rgba(0,0,0,0.1);
   padding-top: 20px; 
