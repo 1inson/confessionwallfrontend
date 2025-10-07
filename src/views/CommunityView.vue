@@ -6,6 +6,9 @@ import { storeToRefs } from 'pinia';
 import { View, Pointer } from '@element-plus/icons-vue';
 import  HotPostsList from '@/components/HotPostsList.vue';
 import type { Confession } from '@/api/confession';
+import { useUserStore } from '@/stores/userStore';
+
+const userStore = useUserStore();
 const confessionStore = useConfessionStore();
 const router = useRouter();
 const { allConfessions, allTotalItems, allCurrentPage, isLoading } = storeToRefs(confessionStore);
@@ -27,6 +30,7 @@ const navigateToProfileDetail = (username: string) => {
 
 onMounted(() => {
   confessionStore.fetchAllConfessions({ page: 1, size: 10 });
+  userStore.fetchUserProfile();
 });
 </script>
 

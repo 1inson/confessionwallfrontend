@@ -6,8 +6,10 @@ export interface RefreshAuthTokens {
   'refresh-token': string;
 }
 export function refreshTokenApi(refreshToken: string): Promise<RefreshAuthTokens> {
-  return service.post('/users/refresh-token', {
-    'refresh-token': refreshToken,
+  return service.get('/users/refresh-token', {
+    params: {
+      'refresh-token': refreshToken,
+    }
   });
 }
 

@@ -21,6 +21,10 @@ const loadInitialPosts = () => {
   }
 };
 
+onMounted(() => {
+  userStore.fetchUserProfile();
+});
+
 watch(() => userStore.isLoggedIn, (isLoggedIn) => {
   if (isLoggedIn) {
     loadInitialPosts();

@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import axios from 'axios';
 import { ElMessage } from 'element-plus';
 
-import { refreshTokenApi,
+import { refreshTokenApi, type RefreshAuthTokens,
   registerApi, type RegisterData,
    loginApi, type LoginData,
    type AuthTokens, getProfileApi, type UserProfile,
@@ -15,8 +15,10 @@ import router from '@/router'
 
 export const useUserStore = defineStore('user', {
   state: () => ({
-    accessToken: localStorage.getItem('accessToken') || '',
-    refreshToken: localStorage.getItem('refreshToken') || '',
+    token: {
+      accessToken: localStorage.getItem('ACCESS_TOKEN') || '',
+      refreshToken: localStorage.getItem('REFRESH_TOKEN') || '',
+    },
 
     profile: null as UserProfile | null, // 用来存放用户信息
 
@@ -30,7 +32,8 @@ export const useUserStore = defineStore('user', {
   }),
   getters: {
     // 用于路由守卫判断登录状态
-    isLoggedIn: (state) => !!state.accessToken||!!state.refreshToken,
+    accessToken: (state) => state.token.accessToken,
+    isLoggedIn: (state) => !!state.token.refreshToken && state.profile !== null,
 
     // 用户是否被拉黑
     isBlocked: (state) => {
@@ -39,23 +42,33 @@ export const useUserStore = defineStore('user', {
   },
   actions: {
 
+    setTokens(tokens: RefreshAuthTokens) {
+      this.token.accessToken = tokens['access-token'];
+      this.token.refreshToken = tokens['refresh-token'];
+      localStorage.setItem('ACCESS_TOKEN', this.token.accessToken);
+      localStorage.setItem('REFRESH_TOKEN', this.token.refreshToken);
+    },
+    logout() {
+      this.token.accessToken = '';
+      this.token.refreshToken = '';
+      this.profile = null;
+      localStorage.removeItem('ACCESS_TOKEN');
+      localStorage.removeItem('REFRESH_TOKEN');
+      router.push('/Auth');
+    },
+
     // 刷新 token
     async refreshTokenAction() {
       try {
-        const responseData = await refreshTokenApi(this.refreshToken);
-
-        this.accessToken = responseData['access-token'];
-        this.refreshToken = responseData['refresh-token'];
-
-        localStorage.setItem('accessToken', this.accessToken);
-        localStorage.setItem('refreshToken', this.refreshToken);
-        
-        console.log('Token refreshed successfully!');
-        return this.accessToken;
-
+        if (!this.token.refreshToken) {
+          throw new Error('No refresh token available.');
+        }
+        const newTokens = await refreshTokenApi(this.token.refreshToken);
+        this.setTokens(newTokens);
+        return newTokens['access-token'];
       } catch (error) {
-        console.error('Failed to refresh token, logging out.');
-        this.logout(); 
+        console.error('Failed to refresh token:', error);
+        this.logout();
         throw error;
       }
     },
@@ -66,13 +79,7 @@ export const useUserStore = defineStore('user', {
       try {
         const responseData = await registerApi(registerData); 
 
-        // 注册成功，执行“自动登录”逻辑
-        this.accessToken = responseData['access-token'];
-        this.refreshToken = responseData['refresh-token'];
-
-        // 将 token 存入 localStorage，防止刷新后丢失
-        localStorage.setItem('accessToken', this.accessToken);
-        localStorage.setItem('refreshToken', this.refreshToken);
+        this.setTokens(responseData);
 
         await this.fetchUserProfile(); // 获取用户信息
 
@@ -90,11 +97,7 @@ export const useUserStore = defineStore('user', {
       try {
         const responseData: AuthTokens = await loginApi(loginData);
 
-        this.accessToken = responseData['access-token'];
-        this.refreshToken = responseData['refresh-token'];
-
-        localStorage.setItem('accessToken', this.accessToken);
-        localStorage.setItem('refreshToken', this.refreshToken);
+        this.setTokens(responseData);
 
         await this.fetchUserProfile();
         console.log('登录成功!');
@@ -135,16 +138,6 @@ export const useUserStore = defineStore('user', {
       } finally {
         this.isLoadingProfile = false;
       }
-    },
-
-    logout() {
-      this.accessToken = '';
-      this.refreshToken = '';
-      this.profile = null;
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      // 跳转到登录页
-      router.push('/auth');
     },
 
  // 修改用户信息

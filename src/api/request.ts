@@ -4,7 +4,7 @@ import { ElMessage } from 'element-plus';
 
 const service = axios.create({
   baseURL: '/api',
-  timeout: 5000
+  timeout: 10000,
 });
 
 service.interceptors.request.use(
@@ -26,54 +26,56 @@ service.interceptors.request.use(
 );
 
 let isRefreshing = false;
-let failedQueue: Array<{ resolve: (value: any) => void, reject: (reason?: any) => void }> = [];
+let requests: ((token: string) => void)[] = [];
 
 service.interceptors.response.use(
-  (response) => {
+  async (response) => {
     const { code, msg, data } = response.data;
+    const originalRequest = response.config;
 
-    if (code == 200) {
+    if (code === 200) {
       return data;
     }
 
-    ElMessage.error(msg || '业务错误');
-    return Promise.reject(new Error(msg || 'Error'));
-
-  },
-  async(error) => {
-   const originalRequest = error.config;
-    if (error.response.status === 401 && !originalRequest._retry) {
-      
+    if (code === 2201) {
       if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
+        return new Promise((resolve) => {
+          requests.push((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            resolve(service(originalRequest));
+          });
         });
       }
 
-      originalRequest._retry = true;
       isRefreshing = true;
+      const userStore = useUserStore();
 
       try {
-        const userStore = useUserStore();
         const newAccessToken = await userStore.refreshTokenAction();
-        
+
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-
-        failedQueue.forEach(promise => promise.resolve(service(originalRequest)));
-        failedQueue = []; // 清空队列
-
-        return service(originalRequest);
+        const retryResponse = await service(originalRequest);
+ 
+        requests.forEach((cb) => cb(newAccessToken));
+        requests = [];
+        
+        return retryResponse;
 
       } catch (refreshError) {
-        failedQueue.forEach(promise => promise.reject(refreshError));
-        failedQueue = [];
+        console.error('Token 刷新失败:', refreshError);
+        userStore.logout();
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
       }
     }
 
-    ElMessage.error(error.response?.data?.msg || error.message || '请求失败');
+    ElMessage.error(msg || '请求失败，请稍后重试');
+    return Promise.reject(new Error(msg || 'Error'));
+  },
+
+  (error) => {
+    ElMessage.error(error.message || '网络错误，请检查您的连接');
     return Promise.reject(error);
   }
 );
