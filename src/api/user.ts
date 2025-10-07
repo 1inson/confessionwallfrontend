@@ -65,9 +65,9 @@ export function updateProfileApi(data: UpdateProfileData): Promise<UserProfile> 
 }
 
 export interface UpdateProfileData {
-  username: string;
-  name: string;
-  avatar: string;
+  username?: string;
+  name?: string;
+  avatar?: string;
 }
 //头像上传成功后返回的接口 
 export interface ImageUploadResponse {

@@ -95,6 +95,7 @@ import axios from 'axios';
 import { storeToRefs } from 'pinia';
 import { UserFilled } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import type { UpdateProfileData } from '@/api/user'
 
 const userStore = useUserStore();
 
@@ -212,40 +213,33 @@ const handleProfileUpdate = async () => {
   }
 
   try {
-    const updateData = {
-      username: username.trim(),
-      name: name.trim(),
-      avatar: finalAvatarUrl 
-    };
+    const payload: Record<string, any> = {};
+    const newUsername = username.trim(); // 假设 username 是 ref
+    const newName = name.trim();         // 假设 name 是 ref
+    const newAvatar = finalAvatarUrl; 
     
-  if (updateData.username === userStore.profile.username) {
-
-    delete updateData.username;
+  if (newUsername && newUsername !== userStore.profile.username) {
+    payload.username = newUsername;
   }
-  
-  // 你也可以为其他字段做同样的处理，以实现完全的差异化提交
-  if (updateData.name === userStore.profile.name) {
-    delete updateData.name;
+  if (newName && newName !== userStore.profile.name) {
+    payload.name = newName;
   }
-  if (updateData.avatar === userStore.profile.avatar) {
-    delete updateData.avatar;
+  if (newAvatar && newAvatar !== userStore.profile.avatar) {
+    payload.avatar = newAvatar;
   }
-
-  // 3. 检查处理后，是否还有需要更新的内容
-  if (Object.keys(updateData).length === 0) {
+  if (Object.keys(payload).length === 0) {
     ElMessage.info('你没有做出任何修改。');
     isModalOpen.value = false;
     return;
   }
 
-  console.log('Submitting cleaned update data:', updateData);
-  await userStore.updateProfile(updateData);
+  console.log('Submitting cleaned update data:', payload);
+  await userStore.updateProfile(payload as UpdateProfileData);
 
   ElMessage.success('用户信息更新成功！');
   isModalOpen.value = false; 
 
 } catch (error) {
-  // 正确的错误处理...
   console.error('Update profile failed:', error);
 }
 };
