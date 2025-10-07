@@ -85,16 +85,9 @@ const submitReply = async () => {
   }
 };
 
-// d. 关闭弹窗时重置状态
 const resetReplyState = () => {
   replyingToComment.value = null;
   replyText.value = '';
-};
-
-// e. 格式化时间戳
-const formatTimestamp = (isoString: string) => {
-  if (!isoString) return '';
-  return new Date(isoString).toLocaleString();
 };
 
 // --- 生命周期钩子 ---
@@ -274,6 +267,9 @@ onMounted(() => {
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
   gap: 10px; 
 }
+.post-content p{
+  font-size:var(--base-font-size);
+}
 .post-footer { 
   display: flex; 
   gap: 20px; 
@@ -310,6 +306,7 @@ onMounted(() => {
 .comment-content {
   color: #333;
   margin-bottom: 10px;
+  font-size:var(--base-font-size);
 }
 .comment-meta {
   font-size: 0.8em;

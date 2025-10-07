@@ -83,6 +83,7 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 80%;
+  font-size: var(--base-font-size);
 }
 .post-likes {
   display: flex;

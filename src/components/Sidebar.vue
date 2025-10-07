@@ -102,6 +102,9 @@ const fontSizes = [
   color: white;
   font-weight: bold;
 }
+.text{
+  font-size: var(--base-font-size);
+}
 
 /* 底部主题设置区域 */
 .sidebar-footer {

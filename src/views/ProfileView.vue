@@ -301,7 +301,7 @@ const handleProfileUpdate = async () => {
 .edit-button, .logout-button {
   padding: 8px 16px; 
   border-radius: 9999px; 
-  font-size: 14px; 
+  font-size: var(--base-font-size);; 
   font-weight: bold;
   cursor: pointer; 
   transition: background-color 0.2s ease; 
@@ -312,10 +312,24 @@ const handleProfileUpdate = async () => {
 .edit-button:hover, .logout-button:hover {
   background-color: rgba(239, 243, 244, 0.1);
 }
-.user-details { text-align: left; }
-.name { font-size: 22px; font-weight: 800; margin: 0 0 2px; color: #fff; }
-.username { font-size: 15px; color: #71767b; margin: 0; }
-.user-id { font-size: 13px; color: #536471; margin-top: 8px; }
+.user-details { 
+  text-align: left; 
+}
+.name { font-size: 20px;
+ font-weight: 800; 
+ margin: 0 0 2px; 
+ color: #fff; 
+}
+.username { 
+  font-size: 15px; 
+  color: #71767b; 
+  margin: 0; 
+}
+.user-id { 
+  font-size: 13px; 
+  color: #536471; 
+  margin-top: 8px; 
+}
 
 /* 弹窗和表单 */
 .modal-overlay {
@@ -439,13 +453,14 @@ const handleProfileUpdate = async () => {
   align-items: center; 
   padding: 16px 0; 
   border-bottom: 1px solid #f0f0f0; 
+  border-radius: 5px;
   transition: background-color 0.2s;
 }
 .user-item:last-child {
   border-bottom: none; 
 }
 .user-item:hover {
-  background-color: #fafafa; 
+  background-color: var(--primary-color); 
 }
 .user-info { 
   display: flex; 

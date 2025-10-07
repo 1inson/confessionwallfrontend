@@ -409,6 +409,9 @@ const handleLike = (post: Confession) => {
 </template>
 
 <style scoped>
+:deep(.el-form-item__label) {
+  font-size: var(--base-font-size);
+}
 .my-posts-page {
   padding: 20px;
   max-width: 800px;
@@ -432,6 +435,7 @@ const handleLike = (post: Confession) => {
 
 .post-card {
   margin-bottom: 20px;
+  background-color: var(--primary-color);
 }
 
 .card-header {

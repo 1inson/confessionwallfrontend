@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
 import { watchEffect } from 'vue';
-
-import { useUserStore } from './stores/userStore'; 
+import { useUserStore, } from './stores/userStore'; 
 import { useThemeStore } from './stores/themeStore'; 
 import Sidebar from './components/Sidebar.vue'; 
 

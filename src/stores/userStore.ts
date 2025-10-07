@@ -65,6 +65,11 @@ export const useUserStore = defineStore('user', {
         }
         const newTokens = await refreshTokenApi(this.token.refreshToken);
         this.setTokens(newTokens);
+        try {
+          await this.fetchUserProfile();
+        } catch (profileError) {
+          console.error("刷新 token 后获取用户信息失败，但 token 本身已刷新:", profileError);
+    }
         return newTokens['access-token'];
       } catch (error) {
         console.error('Failed to refresh token:', error);
