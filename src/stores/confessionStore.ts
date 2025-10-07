@@ -6,6 +6,7 @@ import { createConfessionApi, type Confession, type ConfessionCreationData,
   toggleLikeApi, getHotConfessionsApi, 
   getConfessionByIdApi, type ConfessionDetail, 
   postCommentApi, type NewCommentPayload, type NewCommentResponse, type Comment, 
+  type NewReplyPayload, postReplyApi, 
  } from '@/api/confession';
 import { useUserStore } from '@/stores/userStore';
 
@@ -186,6 +187,7 @@ export const useConfessionStore = defineStore('confession', {
     },
 
     // 获取帖子详情
+
     async fetchConfessionDetail(id: number) {
       this.isLoadingDetail = true;
       this.currentPostDetail = null;
@@ -193,72 +195,143 @@ export const useConfessionStore = defineStore('confession', {
       try {
         const responseData = await getConfessionByIdApi(id);
         this.currentPostDetail = responseData;
+
+        const postDetail = await getConfessionByIdApi(id);
+        if (postDetail.comments && postDetail.comments.length > 0) {
+        postDetail.comments = this.buildCommentTree(postDetail.comments);
+      }
+      
+      this.currentPostDetail = postDetail;
       } catch(error){
         console.error(`获取帖子详情 (ID: ${id}) 失败:`, error);
         ElMessage.error('加载帖子失败，请稍后再试');
+        this.currentPostDetail = null;
       } finally{
         this.isLoadingDetail = false;
       }
     },
 
+    
+    buildCommentTree(comments: Comment[]): Comment[] {
+      const commentMap = new Map<number, Comment>();
+      const rootComments: Comment[] = [];
+    for (const comment of comments) {
+      comment.replies = []; 
+      commentMap.set(comment.id, comment);
+    }
+
+    for (const comment of comments) {
+      if (comment.parent_id && commentMap.has(comment.parent_id)) {
+        const parent = commentMap.get(comment.parent_id)!;
+        parent.replies!.push(comment);
+      } else {
+        rootComments.push(comment);
+      }
+    }
+
+    for (const comment of comments) {
+        if (comment.replies && comment.replies.length > 1) {
+            comment.replies.sort((a, b) => new Date(a.create_at).getTime() - new Date(b.create_at).getTime());
+        }
+    }
+
+    return rootComments;
+  },
+
     //评论
-    async addComment(payload: { postId: number; content: string; parentId?: number }) {
+    async addComment(payload: { postId: number; content: string; parentId?: number; optimisticRootId?: number  }) {
       const userStore = useUserStore();
       const commentPayload: NewCommentPayload = {
         content: payload.content,
         parentId: payload.parentId || 0,
       };
+      if (!this.currentPostDetail) {
+        console.error('无法添加评论，因为 currentPostDetail 为 null');
+        ElMessage.error('无法发表评论，请刷新页面后重试。');
+        return; // 提前退出
+      }
 
       //乐观更新
       const tempCommentId = Date.now(); 
       const optimisticComment: Comment = {
         id: tempCommentId, 
         post_id: payload.postId,
-        parent_id: commentPayload.parentId,
-        root_id: 0, 
+        parent_id: commentPayload.parentId || 0,
+        root_id: payload.optimisticRootId || 0, 
         content: payload.content,
         username: userStore.profile?.username || '我', 
         create_at: new Date().toISOString(), 
         update_at: new Date().toISOString(),
+        replies: [],
       };
       
-      // 列表顶部
-      if (this.currentPostDetail) {
+       if (payload.parentId) {
+        //递归寻找父评论并添加回复
+        const findAndAddReply = (comments: Comment[]): boolean => {
+          for (const comment of comments) {
+            if (comment.id === payload.parentId) {
+              if (!comment.replies) comment.replies = [];
+              comment.replies.unshift(optimisticComment); 
+              return true; 
+            }
+            if (comment.replies && findAndAddReply(comment.replies)) {
+              return true;
+            }
+          }
+          return false; 
+        };
+        findAndAddReply(this.currentPostDetail.comments);
+
+      } else {
         this.currentPostDetail.comments.unshift(optimisticComment);
       }
 
       try {
 
-        const newCommentData = await postCommentApi(payload.postId, commentPayload);
+        let newCommentData: NewCommentResponse;
 
-        if (this.currentPostDetail) {
-          const commentIndex = this.currentPostDetail.comments.findIndex(c => c.id === tempCommentId);
-          if (commentIndex !== -1) {
-            const finalComment: Comment = {
-              post_id: newCommentData.post_id,
-              parent_id: newCommentData.parent_id,
-              root_id: newCommentData.root_id,
-              create_at: newCommentData.create_at,
-              update_at: newCommentData.update_at,
-              id: newCommentData.id,
-              username: newCommentData.username,
-              content: newCommentData.content,
-            };
-            // 替换
-            this.currentPostDetail.comments[commentIndex] = finalComment;
-          }
+        if (payload.parentId) {
+          newCommentData = await postReplyApi(payload.parentId, { content: payload.content });
+        } else {
+          newCommentData = await postCommentApi(payload.postId, { content: payload.content, parentId: 0 });
         }
-        ElMessage.success('评论发布成功！');
+
+        const findAndReplace = (comments: Comment[]): boolean => {
+          const index = comments.findIndex(c => c.id === tempCommentId);
+          if (index !== -1) {
+            comments[index] = { ...newCommentData, replies: comments[index]?.replies ?? [] };
+            return true;
+          }
+          for (const comment of comments) {
+            if (comment.replies && findAndReplace(comment.replies)) {
+              return true;
+            }
+          }
+          return false;
+        };
+        findAndReplace(this.currentPostDetail.comments);
+        ElMessage.success('发布成功！');
 
       } catch (error) {
-        console.error('发布评论失败:', error);
-        ElMessage.error('评论失败，请稍后重试');
+        console.error('发布评论/回复失败:', error);
+        ElMessage.error('发布失败，请稍后重试');
 
-        if (this.currentPostDetail) {
-          this.currentPostDetail.comments = this.currentPostDetail.comments.filter(
-            c => c.id !== tempCommentId
-          );
-        }
+
+        const findAndRemove = (comments: Comment[]): boolean => {
+          const index = comments.findIndex(c => c.id === tempCommentId);
+          if (index !== -1) {
+            comments.splice(index, 1); 
+            return true;
+          }
+          // 递归查找子评论
+          for (const comment of comments) {
+            if (comment.replies && findAndRemove(comment.replies)) {
+              return true;
+            }
+          }
+          return false;
+        };
+        findAndRemove(this.currentPostDetail.comments);
         throw error;
       }
     },

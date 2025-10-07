@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useConfessionStore } from '@/stores/confessionStore';
 import { storeToRefs } from 'pinia';
+
+import type { Comment } from '@/api/confession'; 
 
 import { View, Pointer } from '@element-plus/icons-vue';
 import { ElMessage, ElInput, ElButton, ElAvatar, ElImage, ElEmpty } from 'element-plus';
@@ -15,7 +17,21 @@ const { currentPostDetail: post, isLoadingDetail } = storeToRefs(confessionStore
 // 评论
 const newCommentText = ref('');
 const isSubmitting = ref(false);
-const submitComment = async () => {
+// 回复弹窗
+const replyDialogVisible = ref(false);
+const replyingToComment = ref<Comment | null>(null);
+const replyText = ref('');
+
+const rootComments = computed(() => {
+  return post.value?.comments?.filter(c => !c.parent_id) || [];
+});
+
+const replyDialogTitle = computed(() => {
+  return replyingToComment.value ? `回复 @${replyingToComment.value.username}` : '发布回复';
+});
+
+// 提交新的根评论 (用于主输入框)
+const submitNewComment = async () => {
   if (!newCommentText.value.trim() || !post.value) {
     ElMessage.warning('评论内容不能为空！');
     return;
@@ -26,20 +42,64 @@ const submitComment = async () => {
       postId: post.value.id,
       content: newCommentText.value,
     });
-
-    newCommentText.value = '';
+    newCommentText.value = ''; 
   } catch (error) {
     console.error('发布评论失败:', error);
-    ElMessage.error('评论失败，请稍后重试');
+    ElMessage.error('发布失败，请稍后重试');
   } finally {
     isSubmitting.value = false;
   }
 };
 
+// 回复弹窗
+const openReplyDialog = (comment: Comment) => {
+  replyingToComment.value = comment;
+  replyDialogVisible.value = true;
+};
+
+// 提交回复 (用于弹窗)
+const submitReply = async () => {
+  if (!replyingToComment.value || !replyText.value.trim() || !post.value) {
+    ElMessage.warning('回复内容不能为空！');
+    return;
+  }
+  isSubmitting.value = true;
+  const targetComment = replyingToComment.value;
+  
+  // 关键：计算用于乐观更新的 rootId
+  const optimisticRootId = targetComment.root_id === 0 ? targetComment.id : targetComment.root_id;
+
+  try {
+    await confessionStore.addComment({
+      postId: post.value.id,
+      content: replyText.value,
+      parentId: targetComment.id,
+      optimisticRootId: optimisticRootId,
+    });
+    replyDialogVisible.value = false; 
+  } catch (error) {
+    console.error('发布评论失败:', error);
+    ElMessage.error('发布失败，请稍后重试');
+  } finally {
+    isSubmitting.value = false;
+  }
+};
+
+// d. 关闭弹窗时重置状态
+const resetReplyState = () => {
+  replyingToComment.value = null;
+  replyText.value = '';
+};
+
+// e. 格式化时间戳
+const formatTimestamp = (isoString: string) => {
+  if (!isoString) return '';
+  return new Date(isoString).toLocaleString();
+};
+
+// --- 生命周期钩子 ---
 onMounted(() => {
-
   const postId = Number(route.params.id);
-
   if (postId && !isNaN(postId)) {
     confessionStore.fetchConfessionDetail(postId);
   }
@@ -86,32 +146,50 @@ onMounted(() => {
       <!-- 评论区  -->
       <div class="comments-section">
         <h2>评论区 ({{ post.comments.length }})</h2>
-        <div class.comment-form>
-        <el-input
-          v-model="newCommentText"
-          type="textarea"
-          :rows="4"
-          placeholder="发表你的看法..."
-          maxlength="200"
-          show-word-limit
-        />
-        <el-button 
-          type="primary" 
-          @click="submitComment" 
-          :loading="isSubmitting"
-          style="margin-top: 10px; float: right;"
-        >
-          发布评论
-        </el-button>
+        <div class="comment-form">
+          <el-input
+            v-model="newCommentText"
+            type="textarea"
+            :rows="3"
+            placeholder="发表你的看法..."
+            maxlength="200"
+            show-word-limit
+          />
+          <el-button 
+            type="primary" 
+            @click="submitNewComment" 
+            :loading="isSubmitting"
+            style="margin-top: 10px; float: right;"
+          >
+            发布评论
+          </el-button>
         </div>
       </div>
 
-      <div class.comment-list>
-        <div v-if="post && post.comments.length > 0">
-          <div v-for="comment in post.comments" :key="comment.id" class="comment-item">
-            <div class="comment-author">{{ comment.username }}</div>
-            <div class="comment-content">{{ comment.content }}</div>
-            <div class="comment-meta">{{ comment.create_at }}</div>
+      <div class="comment-list">
+        <div v-if="rootComments.length > 0">
+          <div v-for="comment in rootComments" :key="comment.id" class="comment-item">
+            <div class="comment-main">
+              <span class="comment-author">{{ comment.username }}</span>
+              <p class="comment-content">{{ comment.content }}</p>
+              <div class="comment-footer">
+                <span class="comment-meta">{{ comment.create_at }}</span>
+                <button class="reply-btn" @click="openReplyDialog(comment)">回复</button>
+              </div>
+            </div>
+
+            <div v-if="comment.replies && comment.replies.length > 0" class="replies-list">
+              <div v-for="reply in comment.replies" :key="reply.id" class="comment-item reply-item">
+                 <div class="comment-main">
+                    <span class="comment-author">{{ reply.username }}</span>
+                    <p class="comment-content">{{ reply.content }}</p>
+                    <div class="comment-footer">
+                       <span class="comment-meta">{{ reply.create_at }}</span>
+                       <button class="reply-btn" @click="openReplyDialog(reply)">回复</button>
+                    </div>
+                 </div>
+              </div>
+            </div>
           </div>
         </div>
         <el-empty v-else description="还没有评论，快来抢占第一个沙发！" />
@@ -121,8 +199,32 @@ onMounted(() => {
     <div v-else class="empty-state">
       <el-empty description="无法找到该帖子，或加载失败。" />
     </div>
+
+    <!-- 回复弹窗 -->
+    <el-dialog
+      v-model="replyDialogVisible"
+      :title="replyDialogTitle"
+      width="500px"
+      @close="resetReplyState"
+    >
+      <textarea
+        v-model="replyText"
+        class="reply-textarea"
+        rows="4"
+        placeholder="写下你的回复..."
+      ></textarea>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="replyDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitReply" :loading="isSubmitting">
+            发布回复
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
+
 
 <style scoped>
 .post-detail-page {
@@ -213,5 +315,28 @@ onMounted(() => {
   font-size: 0.8em;
   color: #999;
 }
-
+.reply-btn {
+  background: none;
+  border: none;
+  color: #8a919f;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+.replies-list {
+  margin-left: 30px;
+  padding-left: 20px;
+  border-left: 2px solid #f0f2f5;
+}
+.reply-item {
+  padding-top: 15px;
+  border-bottom: none;
+}
+.reply-textarea {
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
 </style>

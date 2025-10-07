@@ -103,7 +103,7 @@ export function getConfessionByIdApi(id: number): Promise<ConfessionDetail> {
 
 //发布评论
 export interface NewCommentPayload {
-  parentId: number;
+  parentId: number;// 发布新评论时为 0
   content: string;
 }
 
@@ -120,4 +120,12 @@ export interface NewCommentResponse {
 
 export function postCommentApi(postId: number, data: NewCommentPayload): Promise<NewCommentResponse> {
   return service.post(`/confessions/${postId}/comments`, data);
+}
+
+//回复评论
+export interface NewReplyPayload {
+  content: string;
+}
+export function postReplyApi(parentId: number, data: NewReplyPayload): Promise<NewCommentResponse> {
+  return service.post(`confessions/${parentId}/replies`, data);
 }
